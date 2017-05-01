@@ -1,24 +1,13 @@
 /*********************************************************************
-This is an Arduino library for our Monochrome SHARP Memory Displays
-
-  Pick one up today in the adafruit shop!
-  ------> http://www.adafruit.com/products/1393
-
-These displays use SPI to communicate, 3 pins are required to  
-interface
-
-Adafruit invests time and resources providing this open source code, 
-please support Adafruit and open-source hardware by purchasing 
-products from Adafruit!
-
-Written by Limor Fried/Ladyada  for Adafruit Industries.  
-BSD license, check license.txt for more information
-All text above, and the splash screen must be included in any redistribution
+Arduino Library for the LinkSprite 2.04" E-Paper Display
+Written by Michael Niemi / mvniemi  http://github.com/mvniemi
+Implements the Adafruit GFX Class , Adapted from the Sharp Memory display library written by Limor Fried/Ladyada for Adafruit Industries.
 *********************************************************************/
 
 #include "Linksprite_EP2P04.h"
 #include <util/delay.h>
-//Adafruit Defines
+#include <Arduino.h>
+
 #ifndef _swap_int16_t
 #define _swap_int16_t(a, b) { int16_t t = a; a = b; b = t; }
 #endif
@@ -26,43 +15,20 @@ All text above, and the splash screen must be included in any redistribution
 #define _swap_uint16_t(a, b) { uint16_t t = a; a = b; b = t; }
 #endif
 
-/**************************************************************************
-    Sharp Memory Display Connector
-    -----------------------------------------------------------------------
-    Pin   Function        Notes
-    ===   ==============  ===============================
-      1   VIN             3.3-5.0V (into LDO supply)
-      2   3V3             3.3V out
-      3   GND
-      4   SCLK            Serial Clock
-      5   MOSI            Serial Data Input
-      6   CS              Serial Chip Select
-      9   EXTMODE         COM Inversion Select (Low = SW clock/serial)
-      7   EXTCOMIN        External COM Inversion Signal
-      8   DISP            Display On(High)/Off(Low)
-
- **************************************************************************/
-
-//#define EP2P04_BIT_WRITECMD   (0x80)
-//#define EP2P04_BIT_VCOM       (0x40)
-//#define EP2P04_BIT_CLEAR      (0x20)
-//#define TOGGLE_VCOM             do { _EP2P04_vcom = _EP2P04_vcom ? 0x00 : EP2P04_BIT_VCOM; } while(0);
-////
 
 
-
-//LS Defines:
-#define nDC_H digitalWrite(8,HIGH)
-#define nDC_L digitalWrite(8,LOW)
-#define nCS_H digitalWrite(10,HIGH)
-#define nCS_L digitalWrite(10,LOW)
-#define SDA_H digitalWrite(11,HIGH)
-#define SDA_L digitalWrite(11,LOW)
-#define SCLK_H digitalWrite(13,HIGH)
-#define SCLK_L digitalWrite(13,LOW)
-#define nRST_H digitalWrite(12,HIGH)
-#define nRST_L digitalWrite(12,LOW)
-#define a digitalRead(9)
+//SPI Macros
+#define nDC_H digitalWrite(_dc,HIGH)
+#define nDC_L digitalWrite(_dc,LOW)
+#define nCS_H digitalWrite(_cs,HIGH)
+#define nCS_L digitalWrite(_cs,LOW)
+#define SDA_H digitalWrite(_da,HIGH)
+#define SDA_L digitalWrite(_da,LOW)
+#define SCLK_H digitalWrite(_sck,HIGH)
+#define SCLK_L digitalWrite(_sck,LOW)
+#define nRST_H digitalWrite(_rs,HIGH)
+#define nRST_L digitalWrite(_rs,LOW)
+#define a digitalRead(_stat)
 //
 
 //Waveform
@@ -80,9 +46,8 @@ const unsigned char init_data[]={
         0x41,0x45,0xF1,0xFF,0x5F,0x55,0x01,0x00,
         0x00,0x00,};//waveform
 //
-unsigned int buff_size = 1548;
 
-
+unsigned char buff[1548];
 
 const unsigned PROGMEM char gImage[3096] = { /* 0X11,0X02,0X00,0XAC,0X00,0X48, */
         0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
@@ -281,269 +246,29 @@ const unsigned PROGMEM char gImage[3096] = { /* 0X11,0X02,0X00,0XAC,0X00,0X48, *
         0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,};
 
 
-
-//???Mono color ing
-unsigned char mem_buffer[1548] = { /* 0X11,0X01,0X00,0XAC,0X00,0X48, */
-        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-        0X01,0XFE,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0XFE,0X00,0X00,0X00,0X00,0X00,
-        0X00,0X00,0X01,0XFE,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0XFE,0X00,0X00,0X00,
-        0X00,0X00,0X00,0X00,0X01,0XFE,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0XFE,0X00,
-        0X00,0X00,0X00,0X00,0X00,0X00,0X01,0XFE,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X0F,
-        0XFE,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X0F,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-        0X00,0X0F,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X0F,0X00,0X00,0X00,0X00,0X00,
-        0X00,0X00,0X00,0X0F,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X0F,0X00,0X00,0X00,
-        0X00,0X00,0X00,0X00,0X00,0X3F,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X3E,0X00,
-        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X38,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-        0X38,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X38,0X00,0X00,0X00,0X00,0X00,0X00,
-        0X00,0X00,0X38,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X38,0X00,0X00,0X00,0X00,
-        0X00,0X00,0X00,0X00,0X38,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X3F,0XFF,0XF8,
-        0X00,0X00,0X00,0X00,0X00,0X00,0X3F,0XFF,0XF8,0X00,0X00,0X00,0X00,0X00,0X00,0X3F,
-        0XFF,0XF8,0X00,0X00,0X00,0X00,0X00,0X00,0X3F,0XFF,0XF8,0X00,0X00,0X04,0X00,0X80,
-        0X00,0X3F,0XFF,0XF8,0X00,0X00,0X0F,0XFF,0X80,0X00,0X3F,0XFF,0XF8,0X00,0X00,0X0F,
-        0XFF,0X80,0X00,0X3F,0XFF,0XF8,0X00,0X00,0X0F,0XFF,0X80,0X00,0X3F,0XFF,0XF8,0X00,
-        0X00,0X0F,0XFF,0X80,0X00,0X3F,0XFF,0XF8,0X00,0X00,0X0F,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XF8,0X00,0X00,0X0F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X0F,0XFF,0XFF,0XFF,
-        0XFF,0XFF,0XF8,0X00,0X00,0X0F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X0F,0XFF,
-        0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X0F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,
-        0X0F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X0F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,
-        0X00,0X00,0X0F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X0F,0XFF,0XFF,0XFF,0XFF,
-        0XFF,0XF8,0X00,0X00,0X0F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X00,0X0F,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XF8,0X70,0X00,0X0F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X00,0X0F,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X00,0X0F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,
-        0X00,0X0F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,
-        0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,
-        0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,
-        0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X1F,0XFF,0XFF,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XF0,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X07,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X03,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X03,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X03,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XF0,0X03,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X03,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XFF,0XF0,0X00,0X03,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X03,0XFF,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XF8,0X00,0X03,0XF7,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X07,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X07,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,
-        0X00,0X07,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X07,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XF8,0X00,0X00,0X07,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X07,0XFF,0XFF,0XFF,
-        0XFF,0XFF,0XF8,0X00,0X00,0X07,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X07,0XFF,
-        0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X27,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,
-        0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,
-        0X00,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,
-        0XFF,0XF8,0X00,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X3F,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X3F,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X00,
-        0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XFF,0XF0,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X00,0X3F,0XFF,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XF0,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X00,0X3F,0XFF,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X00,
-        0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XF0,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF0,0X70,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,
-        0XFF,0XF8,0X70,0X00,0X3F,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X00,0X3F,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,
-        0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,
-        0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,
-        0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X70,
-        0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-        0XF8,0X00,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X1F,0XFF,0XFF,0XFF,0XFF,
-        0XFF,0XFF,0XF8,0X00,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X1F,0XFF,0XFF,
-        0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X1F,
-        0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,
-        0X00,0X1F,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XF8,0X00,0X00,0X00,0X00,0X00,0X07,0XFF,
-        0XFF,0XF8,0X00,0X00,0X00,0X00,0X00,0X07,0XFF,0XFF,0XF8,0X00,0X00,0X00,0X00,0X00,
-        0X07,0XFF,0XFF,0XF8,0X00,0X00,0X00,0X00,0X00,0X07,0XFF,0XFF,0XF8,0X00,0X00,0X00,
-        0X00,0X00,0X07,0XFF,0XFF,0XF8,0X00,0X00,0X00,0X00,0X00,0X07,0XFF,0XFF,0XF8,0X00,
-        0X00,0X00,0X00,0X00,0X07,0XFF,0XFF,0XF8,0X00,0X00,0X00,0X00,0X00,0X07,0XFF,0XFF,
-        0XF8,0X00,0X00,0X00,0X00,0X00,0X07,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X07,
-        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X07,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-        0X00,0X07,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X07,0X00,0X00,0X00,0X00,0X00,
-        0X00,0X00,0X00,0X07,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X07,0X00,0X00,0X00,
-        0X00,0X00,0X00,0X00,0X00,0X07,0XC0,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X05,0XC0,
-        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0XC0,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-        0X01,0XC0,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0XC0,0X00,0X00,0X00,0X00,0X00,
-        0X00,0X00,0X01,0XC0,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0XFF,0XFE,0X00,0X00,
-        0X00,0X00,0X00,0X00,0X01,0XFF,0XFE,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X3F,0XFE,
-        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X3F,0XFE,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-        0X3F,0XFE,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X3F,0XFE,0X00,0X00,0X00,0X00,0X00,
-        0X00,0X00,0X3F,0XFE,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X3F,0XFE,0X00,0X00,0X00,
-        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,};
-
-//4 color grid
-////unsigned char mem_buffer[1296] = { /* 0X11,0X02,0X00,0X48,0X00,0X48, */
-//        0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-//        0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0X00,0X00,0X00,0XC0,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0XFF,0XFF,
-//        0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-//        0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X03,0X00,
-//        0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,
-//        0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0XC0,
-//        0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
-//        0X00,0XC0,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,0X03,0X00,0X00,0X00,0X00,0X00,
-//};
-
-//mono grid
-//unsigned char mem_buffer[648] = { /* 0X11,0X01,0X00,0X48,0X00,0X48, */
-//        0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,
-//        0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,
-//        0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,
-//        0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,
-//        0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,
-//        0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,
-//        0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,
-//        0X00,0X00,0X10,0X00,0X00,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0X00,0X08,
-//        0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,
-//        0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,
-//        0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,
-//        0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,
-//        0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,
-//        0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,
-//        0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,
-//        0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,
-//        0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,
-//        0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,
-//        0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,
-//        0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,
-//        0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,
-//        0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,
-//        0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,
-//        0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,
-//        0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,
-//        0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,
-//        0X00,0X10,0X00,0X00,0X10,0X00,0X00,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
-//        0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,
-//        0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,
-//        0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,
-//        0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,
-//        0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,
-//        0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,
-//        0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,
-//        0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,
-//        0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,
-//        0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,
-//        0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,
-//        0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,
-//        0X10,0X00,0X00,0X10,0X00,0X00,0X00,0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,0X00,
-//        0X08,0X00,0X10,0X00,0X00,0X10,0X00,0X00,};
-//
 /* CONSTRUCTORS  */
 /* ************* */
-Linksprite_EP2P04::Linksprite_EP2P04(byte mono) :
+Linksprite_EP2P04::Linksprite_EP2P04(uint8_t DC, uint8_t STAT, uint8_t CS, uint8_t DA, uint8_t RS, uint8_t SCK,
+                                     uint8_t MODE)  :
         Adafruit_GFX(EP2P04_LCDWIDTH, EP2P04_LCDHEIGHT) {
-    mem_type = mono;
-//    _clk = clk;
-//    _mosi = mosi;
-//    _ss = ss;
-    //mem_buffer_ptr = *mem_buffer;
-    // Set pin state before direction to make sure they start this way (no glitching)
-//    digitalWrite(_ss, HIGH);
-//    digitalWrite(_clk, LOW);
-//    digitalWrite(_mosi, HIGH);
-//
-//    pinMode(_ss, OUTPUT);
-//    pinMode(_clk, OUTPUT);
-//    pinMode(_mosi, OUTPUT);
-//
-//    clkport     = portOutputRegister(digitalPinToPort(_clk));
-//    clkpinmask  = digitalPinToBitMask(_clk);
-//    dataport    = portOutputRegister(digitalPinToPort(_mosi));
-//    datapinmask = digitalPinToBitMask(_mosi);
+    _mode = MODE;
+    _sck = SCK;
+    _da = DA;
+    _dc = DC;
+    _rs = RS;
+    _stat = STAT;
+    _cs = CS;
 
-//    // Set the vcom bit to a defined state
-//    _EP2P04_vcom = EP2P04_BIT_VCOM;
 
-    //Linksprite Conversion:
-    //What came from the setup function in Arduino sketch:
-    pinMode(8,OUTPUT);
-    pinMode(10,OUTPUT);
-    pinMode(11,OUTPUT);
-    pinMode(13,OUTPUT);
-    pinMode(9,INPUT);
+    if (_mode == 1){buffsize = EP2P04_LCDHEIGHT*EP2P04_LCDWIDTH/4;}
+    else {buffsize = EP2P04_LCDHEIGHT*EP2P04_LCDWIDTH/8;}
+    //mem_buffer = new char[buffsize];
+    mem_buffer = buff;
+    pinMode(_dc,OUTPUT);
+    pinMode(_cs,OUTPUT);
+    pinMode(_da,OUTPUT);
+    pinMode(_sck,OUTPUT);
+    pinMode(_stat,INPUT);
     RESET();
     INIT_SPD2701(); //while(1);
 }
@@ -669,6 +394,7 @@ void Linksprite_EP2P04::WRITE_LUT()
 static const uint8_t PROGMEM
 set[] = {  128,  64,  32,  16,  8,  4,  2,  1 },
 clr[] = { ~1, ~2, ~4, ~8, ~16, ~32, ~64, ~128 };
+//clr[] = { ~1, ~2, ~4, ~8, ~16, ~32, ~64, ~128 };
 
 
 void Linksprite_EP2P04::entersleep()
@@ -679,7 +405,7 @@ void Linksprite_EP2P04::entersleep()
 }
 
 void Linksprite_EP2P04::drawPixel(int16_t x, int16_t y, uint16_t color) {
-    if((x < 0) || (x >= EP2P04_LCDWIDTH) || (y < 0) || (y >= EP2P04_LCDHEIGHT)) return;
+    if((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return;
 
 
     switch(rotation) {
@@ -696,28 +422,25 @@ void Linksprite_EP2P04::drawPixel(int16_t x, int16_t y, uint16_t color) {
             y = EP2P04_LCDHEIGHT - 1 - y;
             break;
     }
-//
-//    if(color) {
-//        mem_buffer[(y*EP2P04_LCDWIDTH + x) / 8] |=
-//                pgm_read_byte(&set[x & 7]);
-//    } else {
-//        mem_buffer[(y*EP2P04_LCDWIDTH + x) / 8] &=
-//                pgm_read_byte(&clr[x & 7]);
-//    }
 
-    if (mem_type) {
-        if (color){
-            mem_buffer[((x * EP2P04_LCDHEIGHT) + y) / 4] |= (0xC0 >> ((y) % 4) * 2);
-        } else{
-            mem_buffer[((x * EP2P04_LCDHEIGHT) + y) / 4] &= ~(0xC0 >> ((y) % 4) * 2);
-        }
+    if (_mode == 1 || _mode == 2) {
+
+//        if (color){
+           // mem_buffer[((x * EP2P04_LCDHEIGHT) + y) / 4] |= (0xC0 >> ((y) % 4) * 2);
+            mem_buffer[((x * EP2P04_LCDHEIGHT) + y) / 4] |= ((color<<6) >> ((y) % 4) * 2);
+            mem_buffer[((x * EP2P04_LCDHEIGHT) + y) / 4] &= (((color<<6) >> ((y) % 4) * 2) + 0xff-(0xC0 >> ((y) % 4) * 2));
+
     }
 
+        //Monochrome buffer
     else{
         if(color){
-            mem_buffer[((x*EP2P04_LCDHEIGHT)+y)/8] |= (0x80 >> ((y)%8)) ;
+            //mem_buffer[((x*EP2P04_LCDHEIGHT)+y)/8] |= (0x80 >> ((y)%8)) ;
+            mem_buffer[((x*EP2P04_LCDHEIGHT)+y)/8] |= pgm_read_byte(&set[y & 7]) ;
+
         }else{
-            mem_buffer[((x*EP2P04_LCDHEIGHT)+y)/8] &= ~(0x01 << ((y)%8)) ;
+            mem_buffer[((x*EP2P04_LCDHEIGHT)+y)/8] &= ~(0x80 >> ((y)%8)) ;
+           // mem_buffer[((x*EP2P04_LCDHEIGHT)+y)/8] &= pgm_read_byte(&clr[y & 7]);
         }
     }
 
@@ -731,80 +454,70 @@ uint8_t Linksprite_EP2P04::getPixel(uint16_t x, uint16_t y){
 
 
 void Linksprite_EP2P04::refresh(void){
-//    char data;
-//    int i;
-//    SPI4W_WRITECOM(0x24);
-//    for(i=0;i<3096;i++)
-//    {
-//        data = pgm_read_byte(&gImage[i]);
-//        SPI4W_WRITEDATA(~data);
-//        //SPI4W_WRITEDATA(0x00);
-//    }
-//    SPI4W_WRITECOM(0x20);
-//   // entersleep();
-
-    //if mono
-    write_buffer_mono();
-
-    //else
-    //color
-    //write_buffer_color();
-
-
+    if (_mode) {
+        write_buffer_color(mem_buffer);
+    }
+    else {write_buffer_mono(mem_buffer);}
 }
 
 void Linksprite_EP2P04::clearDisplay(){
-    for (int i = 0; i < (EP2P04_LCDWIDTH*EP2P04_LCDHEIGHT)/8 ; ++i) {
+    for (int i = 0; i < buffsize ; ++i) {
         mem_buffer[i]=0x00;
     }
+//    RESET();
+//    INIT_SPD2701(); //while(1);
 }
 
-void Linksprite_EP2P04::image_display()
-{
-    char data;
-    int i;
-    SPI4W_WRITECOM(0x24);
-    for(i=0;i<1548;i++)
-    {
-        data = pgm_read_byte(&gImage[i]);
-        SPI4W_WRITEDATA(~data);
-        //SPI4W_WRITEDATA(0x00);
+void Linksprite_EP2P04::fillBlack(){
+    for (int i = 0; i < buffsize ; ++i) {
+        mem_buffer[i]=0xff;
     }
-    SPI4W_WRITECOM(0x20);
-   // entersleep();
 }
 
-void Linksprite_EP2P04::write_buffer_color()
+void Linksprite_EP2P04::setBounds(uint16_t w, uint16_t h) {
+    _width = w;
+    _height = h;
+}
+
+void Linksprite_EP2P04::write_buffer_color(char buffer[])
 {
     char data;
     int i;
     SPI4W_WRITECOM(0x24);
-    for(i=0;i<1548;i++)
-    {
-        data = mem_buffer[i];
-        SPI4W_WRITEDATA(~data);
-        //SPI4W_WRITEDATA(0x00);
+    if (_mode == 1) {
+        for (i = 0; i < buffsize; i++) {
+            data = mem_buffer[i];
+            SPI4W_WRITEDATA(~data);
+            //SPI4W_WRITEDATA(0x00);
+        }
+    }
+    else {
+        for (i = 0; i < buffsize * 2; i++) {
+            data = mem_buffer[i % buffsize];
+            SPI4W_WRITEDATA(~data);
+            //SPI4W_WRITEDATA(0x00);
+        }
     }
     SPI4W_WRITECOM(0x20);
   //  entersleep();
 }
 
-void Linksprite_EP2P04::write_buffer_mono(){
+
+void Linksprite_EP2P04::write_buffer_mono(char buffer[]){
     char data;
     int i;
     uint16_t data16;
     char lo;
     char hi;
-
     SPI4W_WRITECOM(0x24);
 
-    for(i=0;i<1548;i++)
+    for(i=0;i< buffsize;i++)
     {
         uint16_t data16 = 0x0000;
         hi = 0x00;
         lo = 0x00;
 
-        data = mem_buffer[i];
+        data = buffer[i];
         for (int j = 0; j < 8; j++) {
             if (data & (0x01 << j)) {
                 data16 |= (0x03 << (j*2));
@@ -821,209 +534,20 @@ void Linksprite_EP2P04::write_buffer_mono(){
   //  entersleep();
 }
 
-//unsigned short MyShort;
-//unsigned char Char1; // lower byte
-//unsigned char Char2; // upper byte
-//// Split short into two char
-//Char1 = MyShort & 0xFF;
-//Char2 = MyShort >> 8;
-//// merge two char into short
-//MyShort = (Char2 << 8) | Char1;
-//
-///**************************************************************************/
-///*!
-// * ADAFRUIT PRIVATES
-// */
-//    @brief  Sends a single byte in pseudo-SPI.
-//*/
-///**************************************************************************/
-//void Linksprite_EP2P04::sendbyte(uint8_t data)
-//{
-//    uint8_t i = 0;
-//
-//    // LCD expects LSB first
-//    for (i=0; i<8; i++)
-//    {
-//        // Make sure clock starts low
-//        //digitalWrite(_clk, LOW);
-//        *clkport &= ~clkpinmask;
-//        if (data & 0x80)
-//            //digitalWrite(_mosi, HIGH);
-//            *dataport |=  datapinmask;
-//        else
-//            //digitalWrite(_mosi, LOW);
-//            *dataport &= ~datapinmask;
-//
-//        // Clock is active high
-//        //digitalWrite(_clk, HIGH);
-//        *clkport |=  clkpinmask;
-//        data <<= 1;
-//    }
-//    // Make sure clock ends low
-//    //digitalWrite(_clk, LOW);
-//    *clkport &= ~clkpinmask;
-//}
-//
-//void Linksprite_EP2P04::sendbyteLSB(uint8_t data)
-//{
-//    uint8_t i = 0;
-//
-//    // LCD expects LSB first
-//    for (i=0; i<8; i++)
-//    {
-//        // Make sure clock starts low
-//        //digitalWrite(_clk, LOW);
-//        *clkport &= ~clkpinmask;
-//        if (data & 0x01)
-//            //digitalWrite(_mosi, HIGH);
-//            *dataport |=  datapinmask;
-//        else
-//            //digitalWrite(_mosi, LOW);
-//            *dataport &= ~datapinmask;
-//        // Clock is active high
-//        //digitalWrite(_clk, HIGH);
-//        *clkport |=  clkpinmask;
-//        data >>= 1;
-//    }
-//    // Make sure clock ends low
-//    //digitalWrite(_clk, LOW);
-//    *clkport &= ~clkpinmask;
-//}
-///* ************** */
-///* PUBLIC METHODS */
-///* ************** */
-//
-//// 1<<n is a costly operation on AVR -- table usu. smaller & faster
-//static const uint8_t PROGMEM
-//set[] = {  1,  2,  4,  8,  16,  32,  64,  128 },
-//clr[] = { ~1, ~2, ~4, ~8, ~16, ~32, ~64, ~128 };
-//
-///**************************************************************************/
-///*!
-//    @brief Draws a single pixel in image buffer
-//
-//    @param[in]  x
-//                The x position (0 based)
-//    @param[in]  y
-//                The y position (0 based)
-//*/
-///**************************************************************************/
-//void Linksprite_EP2P04::drawPixel(int16_t x, int16_t y, uint16_t color)
-//{
-//    if((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return;
-//
-//    switch(rotation) {
-//        case 1:
-//        _swap_int16_t(x, y);
-//            x = WIDTH  - 1 - x;
-//            break;
-//        case 2:
-//            x = WIDTH  - 1 - x;
-//            y = HEIGHT - 1 - y;
-//            break;
-//        case 3:
-//        _swap_int16_t(x, y);
-//            y = HEIGHT - 1 - y;
-//            break;
-//    }
-//
-//    if(color) {
-//        mem_buffer[(y*EP2P04_LCDWIDTH + x) / 8] |=
-//                pgm_read_byte(&set[x & 7]);
-//    } else {
-//        mem_buffer[(y*EP2P04_LCDWIDTH + x) / 8] &=
-//                pgm_read_byte(&clr[x & 7]);
-//    }
-//}
-//
-///**************************************************************************/
-///*!
-//    @brief Gets the value (1 or 0) of the specified pixel from the buffer
-//
-//    @param[in]  x
-//                The x position (0 based)
-//    @param[in]  y
-//                The y position (0 based)
-//
-//    @return     1 if the pixel is enabled, 0 if disabled
-//*/
-///**************************************************************************/
-//uint8_t Linksprite_EP2P04::getPixel(uint16_t x, uint16_t y)
-//{
-//    if((x >= _width) || (y >= _height)) return 0; // <0 test not needed, unsigned
-//
-//    switch(rotation) {
-//        case 1:
-//        _swap_uint16_t(x, y);
-//            x = WIDTH  - 1 - x;
-//            break;
-//        case 2:
-//            x = WIDTH  - 1 - x;
-//            y = HEIGHT - 1 - y;
-//            break;
-//        case 3:
-//        _swap_uint16_t(x, y);
-//            y = HEIGHT - 1 - y;
-//            break;
-//    }
-//
-//    return mem_buffer[(y*EP2P04_LCDWIDTH + x) / 8] &
-//           pgm_read_byte(&set[x & 7]) ? 1 : 0;
-//}
-//
-///**************************************************************************/
-///*!
-//    @brief Clears the screen
-//*/
-///**************************************************************************/
-//void Linksprite_EP2P04::clearDisplay()
-//{
-//    memset(mem_buffer, 0xff, (EP2P04_LCDWIDTH * EP2P04_LCDHEIGHT) / 8);
-//    // Send the clear screen command rather than doing a HW refresh (quicker)
-//    digitalWrite(_ss, HIGH);
-//    sendbyte(_EP2P04_vcom | EP2P04_BIT_CLEAR);
-//    sendbyteLSB(0x00);
-//    TOGGLE_VCOM;
-//    digitalWrite(_ss, LOW);
-//}
-//
-///**************************************************************************/
-///*!
-//    @brief Renders the contents of the pixel buffer on the LCD
-//*/
-///**************************************************************************/
-//void Linksprite_EP2P04::refresh(void)
-//{
-//    uint16_t i, totalbytes, currentline, oldline;
-//    totalbytes = (EP2P04_LCDWIDTH * EP2P04_LCDHEIGHT) / 8;
-//
-//    // Send the write command
-//    digitalWrite(_ss, HIGH);
-//    sendbyte(EP2P04_BIT_WRITECMD | _EP2P04_vcom);
-//    TOGGLE_VCOM;
-//
-//    // Send the address for line 1
-//    oldline = currentline = 1;
-//    sendbyteLSB(currentline);
-//
-//    // Send image buffer
-//    for (i=0; i<totalbytes; i++)
-//    {
-//        sendbyteLSB(mem_buffer[i]);
-//        currentline = ((i+1)/(EP2P04_LCDWIDTH/8)) + 1;
-//        if(currentline != oldline)
-//        {
-//            // Send end of line and address bytes
-//            sendbyteLSB(0x00);
-//            if (currentline <= EP2P04_LCDHEIGHT)
-//            {
-//                sendbyteLSB(currentline);
-//            }
-//            oldline = currentline;
-//        }
-//    }
-//
-//    // Send another trailing 8 bits for the last line
-//    sendbyteLSB(0x00);
-//    digitalWrite(_ss, LOW);
-//}
+
+
+void Linksprite_EP2P04::image_display(char image[])
+{
+    if (image == NULL){ image = gImage;}
+    char data;
+    int i;
+    SPI4W_WRITECOM(0x24);
+    for(i=0;i<3096;i++)
+    {
+        data = pgm_read_byte(&image[i]);
+        SPI4W_WRITEDATA(~data);
+        //SPI4W_WRITEDATA(0x00);
+    }
+    SPI4W_WRITECOM(0x20);
+   // entersleep();
+}
