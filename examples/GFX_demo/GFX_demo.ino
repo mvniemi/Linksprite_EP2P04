@@ -1,68 +1,53 @@
+//Contains code from Adafruit/Limor Fried GFX Library
+//Authored Michael Niemi, mvniemi@github
+//BSD License
+
 #include <Adafruit_GFX.h>
 #include <Linksprite_EP2P04.h>
-#include "Arduino.h"
-
+        
 #define MONO 0
 #define FOURTONE 1
-
-Linksprite_EP2P04 display(1);
 #define BLACK 1
 #define WHITE 0
+
+//These are the argument for the constructor, default pins (printed on the PCB), are 8,9,10,11,12,13 respectively
+//Linksprite_EP2P04(uint8_t DC, uint8_t STAT, uint8_t CS, uint8_t DA, uint8_t RS, uint8_t SCK, uint8_t MODE);
+//MODE determines what size memory buffer to use:
+// 0 =  MONOCHROME (1.5K buffer for use on Atmega 328 (Arduino Uno)
+// 1 =  4 COLOR GRAYSCALE (3k buffer for anything beefier)
+// 2 = Half Screen Color Display
+// The UNO cannot hold full color in memory, however it can display images stored in PROGRMEM,
+// Holding the monochrome buffer also takes most of the memory, with little room left for sketch variables
+// This sketch currently adds delays before refreshes pending fixes to the library
+Linksprite_EP2P04 display(8,9,10,11,12,13,MONO);
+
 void setup() {
-    Serial.begin(9600);
-    display.begin();
- //display.write_buffer_mono();
- //display.image_display();
-//// display.clearDisplay();
-//////  display.write_buffer_mono();
-// display.refresh();
- display.clearDisplay();
-// display.fillBlack();
- for(int i =0; i<72; i++){
- display.drawPixel(i, i, i%4); 
- }
-// display.refresh();
-////    delay(3000);
-//    display.refresh();
-//    testdrawrect(1);
-//    delay(1000);
-//    display.refresh();
-//    display.clearDisplay();
-//   testdrawchar();
-   display.write_buffer_color();
-//    display.refresh();
-//    delay(2000);
-//    display.clearDisplay();
-//    display.fillBlack();
-//    display.refresh();
-//    delay(1000);
-    //te0stdrawrect(BLACK);
-//    display.refresh();
-//    delay(100);
-//    display.clearDisplay();
-//    display.fillBlack();
-//    //testdrawrect(0);
-//    display.refresh();
-}
-
-
-void printbuffer(char buf[]){
-  for (int i=0 ; i < (72*172/8); i++){
-    PrintHex8(&buf[i],1);
-  }
-  Serial.println("");
+  Serial.begin(9600);
+  display.begin();
   
+  display.image_display();
+  display.refresh();
+  delay(1000);
+  
+  display.clearDisplay();
+  testdrawchar();
+  
+  display.clearDisplay();
+  testdrawrect(BLACK);
+  
+  //Kind of a crazy pattern going on here
+  display.clearDisplay();
+  testdrawcircle();
 }
+
+
 void loop() {
   // put your main code here, to run repeatedly:
-  
-
-
 }
 
 void testdrawrect(int color) {
   for (uint8_t i=0; i<display.height()/2; i+=2) {
-    display.drawRect(i, i, display.width()/2-2*i, display.height()-2*i, color);
+    display.drawRect(i, i, display.width()-2*i, display.height()-2*i, color);
     display.refresh();
   }
 }
@@ -85,14 +70,16 @@ void PrintHex8(uint8_t *data, uint8_t length) // prints 8-bit data in hex with l
 
 void testdrawchar(void) {
   display.setTextSize(1);
-  display.setTextColor(WHITE);
+  display.setTextColor(BLACK);
   display.setCursor(0,0);
 
   for (uint8_t i=0; i < 168; i++) {
     if (i == '\n') continue;
     display.write(i);
-    //if ((i > 0) && (i % 14 == 0))
-      //display.println();
+//Limit the column length
+//    if ((i > 0) && (i % 14 == 0))
+//      display.println();
   }    
+  delay(2000);
   display.refresh();
 }

@@ -1,6 +1,8 @@
-//
-// Created by pc on 4/1/2017.
-//
+/*********************************************************************
+Arduino Library for the LinkSprite 2.04" E-Paper Display
+Written by Michael Niemi / mvniemi  http://github.com/mvniemi
+Implements the Adafruit GFX Class , Adapted from the Sharp Memory display library written by Limor Fried/Ladyada for Adafruit Industries.
+*********************************************************************/
 
 //#ifndef LINKSPRITE_EP2P04_H
 //#define LINKSPRITE_EP2P04_H
@@ -43,6 +45,7 @@ public:
 
     //not implemented
     uint8_t getPixel(uint16_t x, uint16_t y);
+
     int buffsize;
     char* mem_buffer;
 private:

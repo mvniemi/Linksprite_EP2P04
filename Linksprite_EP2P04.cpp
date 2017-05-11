@@ -47,7 +47,7 @@ const unsigned char init_data[]={
         0x00,0x00,};//waveform
 //
 
-unsigned char buff[1548];
+//unsigned char buff[1548];
 
 const unsigned PROGMEM char gImage[3096] = { /* 0X11,0X02,0X00,0XAC,0X00,0X48, */
         0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
@@ -262,8 +262,8 @@ Linksprite_EP2P04::Linksprite_EP2P04(uint8_t DC, uint8_t STAT, uint8_t CS, uint8
 
     if (_mode == 1){buffsize = EP2P04_LCDHEIGHT*EP2P04_LCDWIDTH/4;}
     else {buffsize = EP2P04_LCDHEIGHT*EP2P04_LCDWIDTH/8;}
-    //mem_buffer = new char[buffsize];
-    mem_buffer = buff;
+    mem_buffer = new char[buffsize];
+    //mem_buffer = buff;
     pinMode(_dc,OUTPUT);
     pinMode(_cs,OUTPUT);
     pinMode(_da,OUTPUT);
