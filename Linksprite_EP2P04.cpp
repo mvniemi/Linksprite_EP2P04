@@ -1,4 +1,4 @@
-/*********************************************************************
+   /*********************************************************************
 Arduino Library for the LinkSprite 2.04" E-Paper Display
 Written by Michael Niemi / mvniemi  http://github.com/mvniemi
 Implements the Adafruit GFX Class , Adapted from the Sharp Memory display library written by Limor Fried/Ladyada for Adafruit Industries.
@@ -321,7 +321,7 @@ void Linksprite_EP2P04::DELAY_mS(int delaytime) //????
 }
 
 void Linksprite_EP2P04::RESET(int delay)
-{   if (delay == NULL){delay = 1;}
+{   if (delay == NULL){delay = 100;}
     nRST_L;
     DELAY_mS(delay);//1ms
     nRST_H;
