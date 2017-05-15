@@ -41,7 +41,8 @@ public:
         write_buffer_color(char buffer[]),
         image_display(char image[] = NULL),
         fillBlack(),
-        setBounds(uint16_t w, uint16_t h);
+        setBounds(uint16_t w, uint16_t h),
+        RESET(int delay = NULL), INIT();
 
     //not implemented
     uint8_t getPixel(uint16_t x, uint16_t y);
@@ -60,8 +61,6 @@ private:
         SPI4W_WRITEDATA(unsigned char INIT_DATA),
         SPI4W_WRITEDATA_MONO(unsigned char INIT_DATA),
         WRITE_LUT(),
-        RESET(),
-        INIT_SPD2701(),
         DELAY_mS(int delaytime);
     byte mem_type;
 };

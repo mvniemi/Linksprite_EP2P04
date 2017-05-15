@@ -28,7 +28,7 @@ Implements the Adafruit GFX Class , Adapted from the Sharp Memory display librar
 #define SCLK_L digitalWrite(_sck,LOW)
 #define nRST_H digitalWrite(_rs,HIGH)
 #define nRST_L digitalWrite(_rs,LOW)
-#define a digitalRead(_stat)
+#define read_stat digitalRead(_stat)
 //
 
 //Waveform
@@ -268,9 +268,10 @@ Linksprite_EP2P04::Linksprite_EP2P04(uint8_t DC, uint8_t STAT, uint8_t CS, uint8
     pinMode(_cs,OUTPUT);
     pinMode(_da,OUTPUT);
     pinMode(_sck,OUTPUT);
+    pinMode(_rs, OUTPUT);
     pinMode(_stat,INPUT);
     RESET();
-    INIT_SPD2701(); //while(1);
+    INIT(); //while(1);
 }
 
 void Linksprite_EP2P04::begin() {
@@ -283,7 +284,7 @@ void Linksprite_EP2P04::begin() {
 
 //LS Privates
 
-void Linksprite_EP2P04::INIT_SPD2701()
+void Linksprite_EP2P04::INIT()
 {
     SPI4W_WRITECOM(0x03);//set PREVGH,PREVGL
     SPI4W_WRITEDATA(0x00);
@@ -319,12 +320,12 @@ void Linksprite_EP2P04::DELAY_mS(int delaytime) //????
     while(delaytime--)_delay_ms(1);
 }
 
-void Linksprite_EP2P04::RESET()
-{
+void Linksprite_EP2P04::RESET(int delay)
+{   if (delay == NULL){delay = 1;}
     nRST_L;
-    DELAY_mS(1);//1ms
+    DELAY_mS(delay);//1ms
     nRST_H;
-    DELAY_mS(1);//1ms
+    DELAY_mS(delay);//1ms
 }
 
 void Linksprite_EP2P04::SPI4W_WRITECOM(unsigned char INIT_COM)
@@ -454,6 +455,9 @@ uint8_t Linksprite_EP2P04::getPixel(uint16_t x, uint16_t y){
 
 
 void Linksprite_EP2P04::refresh(void){
+    //Block if display busy
+    while (read_stat){
+    }
     if (_mode) {
         write_buffer_color(mem_buffer);
     }
@@ -464,8 +468,6 @@ void Linksprite_EP2P04::clearDisplay(){
     for (int i = 0; i < buffsize ; ++i) {
         mem_buffer[i]=0x00;
     }
-//    RESET();
-//    INIT_SPD2701(); //while(1);
 }
 
 void Linksprite_EP2P04::fillBlack(){
