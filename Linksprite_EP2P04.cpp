@@ -454,14 +454,24 @@ uint8_t Linksprite_EP2P04::getPixel(uint16_t x, uint16_t y){
 }
 
 
-void Linksprite_EP2P04::refresh(void){
+bool Linksprite_EP2P04::refresh(int timeout_thresh){
     //Block if display busy
-    while (read_stat){
+    if (timeout_thresh == NULL){
+        timeout_thresh = 200;
     }
+    long begin_time = millis();
+    long current;
+    while (read_stat){
+        current = millis();
+        if (current - begin_time > timeout_thresh){
+            return false;
+        }
+     }
     if (_mode) {
         write_buffer_color(mem_buffer);
     }
     else {write_buffer_mono(mem_buffer);}
+    return true;
 }
 
 void Linksprite_EP2P04::clearDisplay(){

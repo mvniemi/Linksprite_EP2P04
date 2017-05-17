@@ -35,7 +35,6 @@ public:
         begin(void),
         drawPixel(int16_t x, int16_t y, uint16_t color),
         clearDisplay(),
-        refresh(void),
         entersleep(void),
         write_buffer_mono(char buffer[]),
         write_buffer_color(char buffer[]),
@@ -44,6 +43,7 @@ public:
         setBounds(uint16_t w, uint16_t h),
         RESET(int delay = NULL), INIT();
 
+    bool refresh(int timeout_thresh = NULL);
     //not implemented
     uint8_t getPixel(uint16_t x, uint16_t y);
 
