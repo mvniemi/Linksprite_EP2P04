@@ -29,9 +29,14 @@ The constructor is:
 
 For example, the constructor call to intialize it as `epaper display` with the default pinouts and monochrome is:  
 `Linksprite_EP2P04 epaper_display(8,9,10,11,12,13,0);`
+
+Finally, call `begin()` on your display object in the setup portion of the sketch.
 ## Functions:
 Because this library implements the display as a Adafruit_GFX object, most of the GFX functions should work. Checkout the [GFX Documentation](https://learn.adafruit.com/adafruit-gfx-graphics-library/graphics-primitives) for in depth description of the available functions. However, here are
 few of the most important functions, along with ones that differ from normal GFX usage:
+
+`void begin()`  
+This initializes the display.
 
 `bool refresh(), refresh(int timeout)`  
 This writes the display buffer (stored on the arduino), to the display. It is called when you want to display any changes made to the buffer. 
