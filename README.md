@@ -8,7 +8,7 @@ Bugs are likely, please raise an issue if you have any problems or question.
 If you're using an Atmel328 or similar (Arduino Uno or similar), you won't have enough memory to buffer the whole display in 4-tone, and will only be able to use monochrome. I have not been able to test full 4-tone yet (I've been able to test run half display on the uno), I will verify it's implemented right once I get ahold of a chip with more memory.
 
 I am currently working on an updated version that uses the onboard display memory, solving this issue and taking
-full advantage of this chip/
+full advantage of this chip.
 # Usage:
 ## Installation:
 Both this library and the Adafruit_GFX library must be installed.
