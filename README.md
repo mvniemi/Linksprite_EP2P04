@@ -25,7 +25,7 @@ First, you must include both Linksprite_EP2P04.h and Adafruit_GFX.h
 The constructor is:  
 `Linksprite_EP2P04(uint8_t DC, uint8_t STAT, uint8_t CS, uint8_t DA, uint8_t RS, uint8_t SCK, uint8_t MODE)`
 
-`MODE` defines whether the display will be monochrome or four tone grayscale. Mono = 0, Four tone = 1. Mono will take up arount 1.5k of memory, and four tone 3.
+`MODE` defines whether the display will be monochrome or four tone grayscale. Mono = 0, Four tone = 1. Mono will take up around 1.5k of memory, and four tone 3.
 
 For example, the constructor call to intialize it as `epaper display` with the default pinouts and monochrome is:  
 `Linksprite_EP2P04 epaper_display(8,9,10,11,12,13,0);`
