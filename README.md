@@ -10,13 +10,13 @@ If you're using an Atmel328 or similar (Arduino Uno or similar), you won't have 
 I am currently working on an updated version that uses the onboard display memory, solving this issue and taking
 full advantage of this chip/
 # Usage:
-##Installation:
+## Installation:
 Both this library and the Adafruit_GFX library must be installed.
 To install this one, download this repository as a zip and extract it in your Arduino/Libraries folder.
 You should than be able to find it under the Examples menu.
 
 For the Adafruit_GFX libary, use the Arduino library manager.
-##Initialization:
+## Initialization:
 First, you must include both Linksprite_EP2P04.h and Adafruit_GFX.h
 ```
 #include <Adafruit_GFX.h>
@@ -29,7 +29,7 @@ The constructor is:
 
 For example, the constructor call to intialize it as `epaper display` with the default pinouts and monochrome is:  
 `Linksprite_EP2P04 epaper_display(8,9,10,11,12,13,0);`
-##Functions:
+## Functions:
 Because this library implements the display as a Adafruit_GFX object, most of the GFX functions should work. Checkout the [GFX Documentation](https://learn.adafruit.com/adafruit-gfx-graphics-library/graphics-primitives) for in depth description of the available functions. However, here are
 few of the most important functions, along with ones that differ from normal GFX usage:
 
@@ -49,7 +49,7 @@ most basic functionality of the display.
 `void clearDisplay()`
 This fills the entrie buffer with white. Used to clear the canvas.
 
-####GFX Functions:  
+#### GFX Functions:  
 Refer to Adafruit for the full documentation.
 
 Printing Text:  
