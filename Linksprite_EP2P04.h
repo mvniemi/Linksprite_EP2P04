@@ -16,10 +16,18 @@ Implements the Adafruit GFX Class , Adapted from the Sharp Memory display librar
 #endif
 
 #include <Adafruit_GFX.h>
-#ifdef __AVR
-#include <avr/pgmspace.h>
-#elif defined(ESP8266)
-#include <pgmspace.h>
+
+#if defined(ESP32)
+  #include <pgmspace.h>
+  #define _delay_ms(ms) delayMicroseconds((ms) * 1000)
+#endif
+#if defined(ESP8266)
+  #include <pgmspace.h>
+  #define _delay_ms(ms) delayMicroseconds((ms) * 1000)
+#endif
+//#include <util/delay.h>
+#ifdef __avr__
+  #include <util/delay.h>
 #endif
 
 // LCD Dimensions
