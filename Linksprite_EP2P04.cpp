@@ -7,18 +7,6 @@ Implements the Adafruit GFX Class , Adapted from the Sharp Memory display librar
 #include "Linksprite_EP2P04.h"
 #include <Arduino.h>
 
-#if defined(ESP32)
-#include <pgmspace.h>
-#define _delay_ms(ms) delayMicroseconds((ms) * 1000)
-#endif
-#if defined(ESP8266)
-#include <pgmspace.h>
-#define _delay_ms(ms) delayMicroseconds((ms) * 1000)
-#endif
-#ifdef avr
-#include <util/delay.h>
-#endif
-
 #ifndef _swap_int16_t
 #define _swap_int16_t(a, b) { int16_t t = a; a = b; b = t; }
 #endif
